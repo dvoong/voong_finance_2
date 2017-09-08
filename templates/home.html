@@ -1,0 +1,44 @@
+<html>
+    <head>
+        <title>Voong Finance</title>
+
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" />
+        <script
+                src="https://code.jquery.com/jquery-3.2.1.min.js"
+                integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+                crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    </head>
+    <body>
+        <div id="balance-chart-container" class="container-fluid">
+            <svg id="balance-chart">
+                <g class="x-axis"></g>
+                <g class="y-axis"></g>
+                <g class="plot-area"></g>
+            </svg>
+        </div>
+        <div id="errors" class="container"></div>
+        <div class="container">
+            <h1>Voong Finance</h1>
+            <div id="ui-container"></div>
+            <div id="balance-table-container">
+                <table id="balance-table" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+
+        <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+    </body>
+</html>
