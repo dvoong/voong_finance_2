@@ -35,7 +35,7 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if 'google_token' in session:
             me = google.get('userinfo')
-            if me.data['verified_email'] == True:
+            if 'verified_email' in me.data and me.data['verified_email'] == True:
                 return f(*args, **kwargs)
         session['next'] = request.url
         return redirect(url_for('login'))
