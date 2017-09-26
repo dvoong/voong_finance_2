@@ -15,14 +15,9 @@ function get_data(args){
         selection.enter()
         .append('tr')
         .attr('class', 'table-entry')
-        .attr('hidden', true)
         .html(function(d){
             return '<td>' + d.date.slice(0, 10) + '</td><td>£' + d.balance + '</td>';
         })
-        
-        $('#balance-table tbody tr').fadeIn();
-        
-        
 
         }).fail(function(xhr, status, status_text){
         var x = d3.select('#errors')
