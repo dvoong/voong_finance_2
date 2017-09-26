@@ -7,10 +7,6 @@
                 src="https://code.jquery.com/jquery-3.2.1.min.js"
                 integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
                 crossorigin="anonymous"></script>
-        <!--
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
--->
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>        
         <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">        
         <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js"></script>
@@ -29,13 +25,37 @@
             <h1>Voong Finance</h1>
 
             <div id="ui-container">
+                <h3>Create New Transaction</h3>
                 <form id="new-transaction-form">
                     <div class="form-group row">
                         <label for="date-input" class="col-2 col-form-label">Date</label>
                         <div class="col-10">
-                            <input class="form-control" type="date" > <!--value="Artisanal kale" id="example-text-input">-->
+                            <input id="date-input" class="form-control" type="date" >
                         </div>
-                    </div>                    
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="description-input" class="col-2 col-form-label">Description</label>
+                        <div class="col-10">
+                            <input id="description-input" class="form-control" type="text" >
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="transaction-size-input" class="col-2 col-form-label">Transaction Size</label>
+                        <div class="col-10">
+                            <input id="transaction-size-input" class="form-control" type="number" step='0.01' value='0.00' placeholder='0.00'>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="transaction-size-input" class="col-2 col-form-label"></label>
+                        <div class="col-10">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </div>
+                    </div>
+
+
                 </form>
             </div>
 
