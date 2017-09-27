@@ -58,8 +58,9 @@ $('#new-transaction-form').submit(function(e){
     if(transaction_date > date_range[1]){
         // do nothing, don't need to update balance
     } else {
-        $.get('/get-balance', {start: transaction_date.format('YYYY-MM-DD'), end: date_range[1].format('YYYY-MM-DD')})
-//        $.get('/get-balance', {start: '2017-03-01', end: '2017-05-01'})
+        var start = d3.max([transaction_date, date_range[0]]);
+        var end = date_range[1];
+        $.get('/get-balance', {start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD')})
         .done(function(data, status, xhr){
             console.log('get-balance done: ');
             console.log(data);
