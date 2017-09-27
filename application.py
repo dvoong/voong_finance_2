@@ -122,6 +122,7 @@ def create_transaction():
     print('request:', request)
     print('request.get_json(): ', request.get_json())
     print('request.args:', request.args)
+    print('request.form:', request.form)
     print('request.data:', request.data)
     return app.response_class(
         response=json.dumps({'status': 200, 'transaction': {}}),
