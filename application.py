@@ -29,6 +29,16 @@ google = oauth.remote_app(
     access_token_url='https://accounts.google.com/o/oauth2/token',
     authorize_url='https://accounts.google.com/o/oauth2/auth',
 )
+    
+connection = psycopg2.connect(
+    user=os.environ['VOONG_FINANCE_DB_USER'], #'voong_finance',
+    password=os.environ['VOONG_FINANCE_DB_PASSWORD'], #testdb
+    host=os.environ['VOONG_FINANCE_DB_HOST'], #localhost
+    database=os.environ['VOONG_FINANCE_DB_NAME'], #voong_finance_db
+    port=os.environ['VOONG_FINANCE_DB_PORT'] # '5432'
+)
+
+cursor = connection.cursor()
 
 def login_required(f):
     @wraps(f)
@@ -80,7 +90,7 @@ def get_google_oauth_token():
 def get_data():
     end = request.args.get('end', datetime.date.today())
     start = request.args.get('start', end - datetime.timedelta(days=14))
-    user = google.get('userinfo')
+    user_id = google.get('userinfo').data['email']
     
     sql = ''' 
     select
@@ -95,15 +105,7 @@ def get_data():
         
     order by 1
 
-    '''.format(start=start, end=end, email=user.data['email'])
-    
-    connection = psycopg2.connect(
-        user=os.environ['VOONG_FINANCE_DB_USER'], #'voong_finance',
-        password=os.environ['VOONG_FINANCE_DB_PASSWORD'], #testdb
-        host=os.environ['VOONG_FINANCE_DB_HOST'], #localhost
-        database=os.environ['VOONG_FINANCE_DB_NAME'], #voong_finance_db
-        port=os.environ['VOONG_FINANCE_DB_PORT'] # '5432'
-    )
+    '''.format(start=start, end=end, email=user_id)
 
     dates = pd.DataFrame(pd.date_range(start, end, freq='D'), columns=['date'])
     df = pd.read_sql(sql, connection)
@@ -119,11 +121,27 @@ def get_data():
 @app.route('/create-transaction', methods=['POST'])
 @login_required
 def create_transaction():
-    print('request:', request)
-    print('request.get_json(): ', request.get_json())
-    print('request.args:', request.args)
     print('request.form:', request.form)
-    print('request.data:', request.data)
+
+    date = request.form.get('date')
+    description = request.form.get('description')
+    transaction_size = request.form.get('transaction-size')
+    user = google.get('userinfo').data['email']
+    
+    print('date:', date)
+    print('description:', description)
+    print('transaction_size:', transaction_size)
+    print('user:', user)
+    
+    sql = ''' 
+    insert into transactions (date, user_id, description, transaction_size) values  ('{}', '{}', '{}', {}) 
+    '''.format(date, user, description, transaction_size)
+    
+    print('sql:', sql)
+    
+    cursor.execute(sql)
+    connection.commit()
+    
     return app.response_class(
         response=json.dumps({'status': 200, 'transaction': {}}),
         status=200,
