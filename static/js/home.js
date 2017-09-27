@@ -32,6 +32,14 @@ function get_data(args){
     })
 }
 
+$('#new-transaction-form').submit(function(e){
+    e.preventDefault();
+    console.log('submit-form');
+    console.log($(this).serialize());
+    
+    $.post('/create-transaction', $(this).serialize());
+})
+
 $(document).ready(function(){
     get_data();
 })

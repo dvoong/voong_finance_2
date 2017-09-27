@@ -44,7 +44,8 @@ def login_required(f):
 @app.route('/')
 @login_required
 def index():
-    return render_template('home.html')
+    today = datetime.date.today()
+    return render_template('home.html', today=today)
 
 
 @app.route('/login')
@@ -115,7 +116,18 @@ def get_data():
         mimetype='application/json'
     )
 
-
+@app.route('/create-transaction', methods=['POST'])
+@login_required
+def create_transaction():
+    print('request:', request)
+    print('request.get_json(): ', request.get_json())
+    print('request.args:', request.args)
+    print('request.data:', request.data)
+    return app.response_class(
+        response=json.dumps({'status': 200, 'transaction': {}}),
+        status=200,
+        mimetype='application/json'
+    )
 
 #
 #def login_required(f):
