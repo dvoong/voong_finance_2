@@ -34,40 +34,49 @@ function get_data(args){
 
 $('#new-transaction-form').submit(function(e){
     console.log('new_transaction');
-    
+
     e.preventDefault();
     console.log('submit-form');
     console.log($(this).serialize());
-
-    $.post('/create-transaction', $(this).serialize());
-
-    var data = d3.select('#balance-table tbody')
-    .selectAll('tr.table-entry')
-    .data();
     
-    console.log('data');
-    console.log(data);
+    var form = this;
 
-    var date_range = [moment.utc(data[0].date), moment.utc(data[data.length - 1].date)];
-    console.log('date_range');
-    console.log(date_range);
-    
-    var transaction_date = moment.utc($(this).find('input#date-input').val());
-    console.log(transaction_date);
-    
-    if(transaction_date > date_range[1]){
-        // do nothing, don't need to update balance
-    } else {
-        var start = d3.max([transaction_date, date_range[0]]);
-        var end = date_range[1];
-        $.get('/get-balance', {start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD')})
+    $.post('/create-transaction', $(this).serialize())
         .done(function(data, status, xhr){
-            console.log('get-balance done: ');
-            console.log(data);
-        });
-    }
-    
-    })
+
+        console.log('create-transaction done');
+        console.log(data);
+
+        var data = d3.select('#balance-table tbody')
+        .selectAll('tr.table-entry')
+        .data();
+
+        console.log('data');
+        console.log(data);
+
+        var date_range = [moment.utc(data[0].date), moment.utc(data[data.length - 1].date)];
+        console.log('date_range');
+        console.log(date_range);
+
+        var transaction_date = moment.utc($(form).find('input#date-input').val());
+        console.log('transaction_date');
+        console.log(transaction_date);
+
+        if(transaction_date > date_range[1]){
+            // do nothing, don't need to update balance
+            console.log('transation_date > date_range[1]')
+        } else {
+            var start = d3.max([transaction_date, date_range[0]]);
+            var end = date_range[1];
+            $.get('/get-balance', {start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD')})
+                .done(function(data, status, xhr){
+                console.log('get-balance done: ');
+                console.log(data);
+            });
+        }
+    });
+
+})
 
 $(document).ready(function(){
     get_data();
