@@ -85,12 +85,20 @@ def authorized(next='/'):
 def get_google_oauth_token():
     return session.get('google_token')
 
-@app.route('/get-data')
+@app.route('/get-balance')
 @login_required
-def get_data():
-    end = request.args.get('end', datetime.date.today())
+def get_balance():
+    print('get-balance')
+    try:
+        end = datetime.datetime.strptime(request.args['end'], '%Y-%m-%d').date()
+    except:
+        end = datetime.date.today()
     start = request.args.get('start', end - datetime.timedelta(days=14))
     user_id = google.get('userinfo').data['email']
+    
+    print('start:', start)
+    print('end:', end)
+    print('user_id:', user_id)
     
     sql = ''' 
     select
@@ -101,11 +109,12 @@ def get_data():
     
     where email = '{email}'
         and date >= '{start}'
-        and date < '{end}'
+        and date <= '{end}'
         
     order by 1
 
     '''.format(start=start, end=end, email=user_id)
+    print('sql:', sql)
 
     dates = pd.DataFrame(pd.date_range(start, end, freq='D'), columns=['date'])
     df = pd.read_sql(sql, connection)

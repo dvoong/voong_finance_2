@@ -1,7 +1,7 @@
 console.log('home');
 
-function get_data(args){
-    $.get('/get-data', args)
+function get_balance(args){
+    $.get('/get-balance', args)
         .done(function(data, status, xhr){
         console.log('done');
         console.log(data);
@@ -68,6 +68,9 @@ $('#new-transaction-form').submit(function(e){
         } else {
             var start = d3.max([transaction_date, date_range[0]]);
             var end = date_range[1];
+            console.log('get-balance');
+            console.log('start:', start);
+            console.log('end:', end);
             $.get('/get-balance', {start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD')})
                 .done(function(data, status, xhr){
                 console.log('get-balance done: ');
@@ -79,5 +82,5 @@ $('#new-transaction-form').submit(function(e){
 })
 
 $(document).ready(function(){
-    get_data();
+    get_balance();
 })
