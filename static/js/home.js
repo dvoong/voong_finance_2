@@ -10,11 +10,10 @@ function get_balance(args){
         .selectAll('tr.table-entry')
         .data(data, function(d){return d.date});
 
-        console.log(selection);
-
         selection.enter()
             .append('tr')
             .attr('class', 'table-entry')
+            .merge(selection)
             .html(function(d){
             return '<td>' + d.date.slice(0, 10) + '</td><td>£' + d.balance + '</td>';
         })
@@ -68,26 +67,7 @@ $('#new-transaction-form').submit(function(e){
             console.log('get-balance');
             console.log('start:', start);
             console.log('end:', end);
-            $.get('/get-balance', {start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD')})
-                .done(function(data, status, xhr){
-                console.log('get-balance done: ');
-                console.log(data);
-
-                var selection = d3.select('#balance-table tbody')
-                .selectAll('tr.table-entry')
-                .data(data, function(d){return d.date});
-
-                selection.enter()
-                    .append('tr')
-                    .attr('class', 'table-entry')
-                    .html(function(d){
-                    return '<td>' + d.date.slice(0, 10) + '</td><td>£' + d.balance + '</td>';
-                })
-                
-                selection.html(function(d){
-                    return '<td>' + d.date.slice(0, 10) + '</td><td>£' + d.balance + '</td>';
-                })
-            });
+            get_balance({start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD')});
         }
     });
 

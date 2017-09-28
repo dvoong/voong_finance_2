@@ -120,9 +120,13 @@ def get_balance():
     df = pd.read_sql(sql, connection)
     df = dates.merge(df, how='left', on='date')
     df = df.fillna(0)
+    df['date'] = df['date'].map(lambda x: x.strftime('%Y-%m-%d'))
+    
+    response_json = df.to_json(orient='records')
+    print('response_json:', response_json)
     
     return app.response_class(
-        response=df.to_json(orient='records', date_format='iso'),
+        response=response_json,
         status=200,
         mimetype='application/json'
     )
