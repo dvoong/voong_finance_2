@@ -38,7 +38,7 @@ $('#new-transaction-form').submit(function(e){
     e.preventDefault();
     console.log('submit-form');
     console.log($(this).serialize());
-    
+
     var form = this;
 
     $.post('/create-transaction', $(this).serialize())
@@ -50,9 +50,6 @@ $('#new-transaction-form').submit(function(e){
         var data = d3.select('#balance-table tbody')
         .selectAll('tr.table-entry')
         .data();
-
-        console.log('data');
-        console.log(data);
 
         var date_range = [moment.utc(data[0].date), moment.utc(data[data.length - 1].date)];
         console.log('date_range');
@@ -75,6 +72,21 @@ $('#new-transaction-form').submit(function(e){
                 .done(function(data, status, xhr){
                 console.log('get-balance done: ');
                 console.log(data);
+
+                var selection = d3.select('#balance-table tbody')
+                .selectAll('tr.table-entry')
+                .data(data, function(d){return d.date});
+
+                selection.enter()
+                    .append('tr')
+                    .attr('class', 'table-entry')
+                    .html(function(d){
+                    return '<td>' + d.date.slice(0, 10) + '</td><td>£' + d.balance + '</td>';
+                })
+                
+                selection.html(function(d){
+                    return '<td>' + d.date.slice(0, 10) + '</td><td>£' + d.balance + '</td>';
+                })
             });
         }
     });
