@@ -5,10 +5,15 @@ import flask
 import psycopg2
 import numpy as np
 import pandas as pd
+import dev
+import models
+import logging
 from functools import wraps
 from flask import Flask, render_template, g, request, redirect, url_for, session, jsonify
 from flask_oauthlib.client import OAuth
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 app = Flask(__name__)
 
@@ -89,7 +94,7 @@ def get_google_oauth_token():
 @app.route('/get-balance')
 @login_required
 def get_balance():
-    print('get-balance')
+    logging.debug('/get-balance')
     try:
         end = datetime.datetime.strptime(request.args['end'], '%Y-%m-%d').date()
     except:
@@ -97,110 +102,59 @@ def get_balance():
     start = request.args.get('start', end - datetime.timedelta(days=14))
     user_id = google.get('userinfo').data['email']
     
-    print('start:', start)
-    print('end:', end)
-    print('user_id:', user_id)
+    logger.debug('start: {}'.format(start))
+    logger.debug('end: {}'.format(end))
+    logger.debug('user_id: {}'.format(user_id))
     
-    sql = ''' 
-    select
-        date,
-        balance
-        
-    from balances
+    user_info = dev.get_user_info(user_id, connection)
     
-    where user_id = '{user_id}'
-        and date >= '{start}'
-        and date <= '{end}'
-        
-    order by 1
-
-    '''.format(start=start, end=end, user_id=user_id)
-    print('sql:', sql)
-
-    df = pd.read_sql(sql, connection)
-    print('df:', df)
+    balance_entries = pd.DataFrame([[datetime.date(2017, 9, 27), 10]], columns=['date', 'balance'])
     
-    start_ = df['date'].min()
-    end_ = df['date'].max()
+    if user_info == None:
+        logger.debug('new_user')
+        balance_entries = pd.DataFrame(pd.date_range(start, end), columns=['date'])
+        balance_entries['balance'] = 0
+    else:
+        if user_info.start <= start and user_info.end >= end:
+            start_balance = dev.get_balance(user_info, start, connection)
+        else:
+            pass
     
-    print('start_:', start_)
-    print('end_:', end_)
-    
-    if start_ != start:
-        print('balance entry for start date not found')
-        sql = ''' 
-        with last_entry as (
-            select
-                user_id,
-                max(date) as date
-                
-            from balances
-            
-            where user_id = '{user_id}'
-                and date < '{start}'
-            
-            group by 1
-            
-        )
-        
-        select balance from balances join last_entry using (user_id, date)
-        
-        '''.format(user_id=user_id, start=start)
-        
-        df_ = pd.read_sql(sql, connection)
-        
-        print('last_entry:', df_)
-        
-        if len(df_) == 0:
-            # found no previous balance
-            date_range = pd.date_range(start, start_ - datetime.timedelta(days=1) if not np.isnan(start_) else end)
-            df = pd.DataFrame(date_range, columns=['date'])
-            df['user_id'] = user_id
-            df['balance'] = 0.0
-            values = ', '.join(df.apply(lambda x: '''('{}', '{}', {})'''.format(x.user_id, x.date.strftime('%Y-%m-%d'), x.balance), axis=1))
-            sql = '''
-            insert into balances (user_id, date, balance) values {values}
-            '''.format(values=values)
-            print('sql:', sql)
-            cursor.execute(sql)
-            connection.commit()
-
-        # did not find start, find last entry before start and propagate to start or initialise to 0
-#        pass
-#        df = pd.concat([df_start, df])
-#    if end_ != end:
-#        pass
-#        df = pd.concat([df, df_end])
-        # dif not find end, find last entry before end and propagate to end
-#    if(len(df) == 0):
-#        print('no balance entries found for {} creating balance entries'.format(user_id))
-#        date_range = pd.date_range(start, end)
-#        df = pd.DataFrame()
-#        df['date'] = date_range
-#        df['user_id'] = user_id
-#        df['balance'] = 0
-#        print('df:', df)
-#        values = ', '.join(df.apply(lambda x: '''('{}', '{}', {})'''.format(x.user_id, x.date.strftime('%Y-%m-%d'), x.balance), axis=1))
-#        sql = '''
-#        insert into balances (user_id, date, balance) values {values}
-#        '''.format(values=values)
-#        print('sql:', sql)
-#        cursor.execute(sql)
-#        connection.commit()
-    
-#    dates = pd.DataFrame(pd.date_range(start, end, freq='D'), columns=['date'])
-#    df = dates.merge(df, how='left', on='date')
+#    balance_entries = models.get_balance_entries(user_id, start, end, connection)
+#    
+#    first = balance_entries['date'].min() if len(balance_entries) else None
+#    last = balance_entries['date'].max() if len(balance_entries) else None
+#    
+#    logger.debug('first: {}'.format(first))
+#    logger.debug('last: {}'.format(last))
+#    
+#    if first != start:
+#        logger.debug('balance_entry not found for start')
+#        previous_entry = models.get_previous_entry(user_id, start, connection)
+#        logger.debug('previous_entry: {}'.format(previous_entry))
+#        if previous_entry == None: # new user
+#            logger.debug('new_user')
+#            balance_entries = pd.DataFrame(pd.date_range(start, end), columns=['date'])
+#            balance_entries['balance'] = 0
+#        else:
+#            if last 
+#            # calculate balances from previous entry to start
+#            balances = dev.populate_balances(previous_entry, start, connection)
+#            logger.debug('balances: {}'.format(balances))
+#    
+    dates = pd.DataFrame(pd.date_range(start, end, freq='D'), columns=['date'])
+    balance_entries = dates.merge(balance_entries, how='left', on='date')
 #    df = df.fillna(0)
-    df['date'] = df['date'].map(lambda x: x.strftime('%Y-%m-%d'))
+    balance_entries['date'] = balance_entries['date'].map(lambda x: x.strftime('%Y-%m-%d'))
     
-    response_json = df.to_json(orient='records')
+    response_json = balance_entries.to_json(orient='records')
     print('response_json:', response_json)
     
     return app.response_class(
         response=response_json,
         status=200,
         mimetype='application/json'
-    )
+    )    
 
 @app.route('/create-transaction', methods=['POST'])
 @login_required
@@ -210,16 +164,16 @@ def create_transaction():
     date = request.form.get('date')
     description = request.form.get('description')
     transaction_size = request.form.get('transaction-size')
-    user = google.get('userinfo').data['email']
+    user_id = google.get('userinfo').data['email']
     
     print('date:', date)
     print('description:', description)
     print('transaction_size:', transaction_size)
-    print('user:', user)
+    print('user_id:', user_id)
     
     sql = ''' 
     insert into transactions (date, user_id, description, transaction_size) values  ('{}', '{}', '{}', {}) 
-    '''.format(date, user, description, transaction_size)
+    '''.format(date, user_id, description, transaction_size)
     
     print('sql:', sql)
     
@@ -229,10 +183,32 @@ def create_transaction():
     # delete future balances
     sql = ''' 
     delete from balances where user_id = '{user_id}' and date >= '{date}'
-    '''
+    '''.format(user_id=user_id, date=date)
     
     cursor.execute(sql)
     connection.commit()
+    
+    # TODO: update balances
+#    dev.update_balances
+    
+    # update user info
+#    user_info = dev.get_user_info(user_id, connection)
+#    
+#    if user_info == None:
+#        sql = ''' 
+#        insert into user_info (
+#            user_id, 
+#            first_balance_entry, 
+#            last_balance_entry
+#        ) 
+#            
+#        values (
+#            '{user_id}', 
+#            '{date}', 
+#            '{date}'
+#        ) 
+#        
+#        '''
     
     return app.response_class(
         response=json.dumps({'status': 200, 'transaction': {}}),
