@@ -3,6 +3,7 @@ import datetime
 import simplejson as json
 import flask
 import psycopg2
+import numpy as np
 import pandas as pd
 from functools import wraps
 from flask import Flask, render_template, g, request, redirect, url_for, session, jsonify
@@ -107,19 +108,89 @@ def get_balance():
         
     from balances
     
-    where email = '{email}'
+    where user_id = '{user_id}'
         and date >= '{start}'
         and date <= '{end}'
         
     order by 1
 
-    '''.format(start=start, end=end, email=user_id)
+    '''.format(start=start, end=end, user_id=user_id)
     print('sql:', sql)
 
-    dates = pd.DataFrame(pd.date_range(start, end, freq='D'), columns=['date'])
     df = pd.read_sql(sql, connection)
-    df = dates.merge(df, how='left', on='date')
-    df = df.fillna(0)
+    print('df:', df)
+    
+    start_ = df['date'].min()
+    end_ = df['date'].max()
+    
+    print('start_:', start_)
+    print('end_:', end_)
+    
+    if start_ != start:
+        print('balance entry for start date not found')
+        sql = ''' 
+        with last_entry as (
+            select
+                user_id,
+                max(date) as date
+                
+            from balances
+            
+            where user_id = '{user_id}'
+                and date < '{start}'
+            
+            group by 1
+            
+        )
+        
+        select balance from balances join last_entry using (user_id, date)
+        
+        '''.format(user_id=user_id, start=start)
+        
+        df_ = pd.read_sql(sql, connection)
+        
+        print('last_entry:', df_)
+        
+        if len(df_) == 0:
+            # found no previous balance
+            date_range = pd.date_range(start, start_ - datetime.timedelta(days=1) if not np.isnan(start_) else end)
+            df = pd.DataFrame(date_range, columns=['date'])
+            df['user_id'] = user_id
+            df['balance'] = 0.0
+            values = ', '.join(df.apply(lambda x: '''('{}', '{}', {})'''.format(x.user_id, x.date.strftime('%Y-%m-%d'), x.balance), axis=1))
+            sql = '''
+            insert into balances (user_id, date, balance) values {values}
+            '''.format(values=values)
+            print('sql:', sql)
+            cursor.execute(sql)
+            connection.commit()
+
+        # did not find start, find last entry before start and propagate to start or initialise to 0
+#        pass
+#        df = pd.concat([df_start, df])
+#    if end_ != end:
+#        pass
+#        df = pd.concat([df, df_end])
+        # dif not find end, find last entry before end and propagate to end
+#    if(len(df) == 0):
+#        print('no balance entries found for {} creating balance entries'.format(user_id))
+#        date_range = pd.date_range(start, end)
+#        df = pd.DataFrame()
+#        df['date'] = date_range
+#        df['user_id'] = user_id
+#        df['balance'] = 0
+#        print('df:', df)
+#        values = ', '.join(df.apply(lambda x: '''('{}', '{}', {})'''.format(x.user_id, x.date.strftime('%Y-%m-%d'), x.balance), axis=1))
+#        sql = '''
+#        insert into balances (user_id, date, balance) values {values}
+#        '''.format(values=values)
+#        print('sql:', sql)
+#        cursor.execute(sql)
+#        connection.commit()
+    
+#    dates = pd.DataFrame(pd.date_range(start, end, freq='D'), columns=['date'])
+#    df = dates.merge(df, how='left', on='date')
+#    df = df.fillna(0)
     df['date'] = df['date'].map(lambda x: x.strftime('%Y-%m-%d'))
     
     response_json = df.to_json(orient='records')
@@ -151,6 +222,14 @@ def create_transaction():
     '''.format(date, user, description, transaction_size)
     
     print('sql:', sql)
+    
+    cursor.execute(sql)
+    connection.commit()
+    
+    # delete future balances
+    sql = ''' 
+    delete from balances where user_id = '{user_id}' and date >= '{date}'
+    '''
     
     cursor.execute(sql)
     connection.commit()
